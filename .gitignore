@@ -6,7 +6,12 @@ __pycache__/
 # C extensions
 *.so
 
-src/inception_block.py
+# Repo files
+/src/inception_block.py
+/src/inception.py
+/src/inceptiontime.py
+/src/residual_block.py
+/src/resnet.py
 
 
 # Distribution / packaging
