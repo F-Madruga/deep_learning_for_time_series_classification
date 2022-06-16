@@ -13,6 +13,12 @@ __pycache__/
 /src/residual_block.py
 /src/resnet.py
 
+/src/data_organizer.py
+/datasets
+/data_prep
+/brian
+/Tese
+
 
 # Distribution / packaging
 .Python

@@ -7,3 +7,5 @@ torchvision
 pytorch-lightning
 torchmetrics
 openpyxl
+vit-pytorch
+scikit-learn
