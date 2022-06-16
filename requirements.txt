@@ -1,0 +1,11 @@
+numpy
+Pillow
+pandas
+opencv-python
+torch
+torchvision
+pytorch-lightning
+torchmetrics
+openpyxl
+vit-pytorch
+scikit-learn
