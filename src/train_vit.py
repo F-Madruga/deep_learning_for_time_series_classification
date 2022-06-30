@@ -35,11 +35,11 @@ def train_vit(datasets_parameters, data_type, results):
         val_transform = transforms.Compose([lambda x: plotting_time_normalization(x), transforms.ToTensor()])
         test_transform = transforms.Compose([lambda x: plotting_time_normalization(x), transforms.ToTensor()])
     # add column for model results
-    if 'vit_train_accuracy' not in results.columns or TRAIN_NEW_MODELS:
+    if f'vit_{data_type}_train_accuracy' not in results.columns or TRAIN_NEW_MODELS:
         print('Never trained this model')
-        results['vit_train_accuracy'] = np.full((len(results)), -1).tolist()
-        results['vit_val_accuracy'] = np.full((len(results)), -1).tolist()
-        results['vit_test_accuracy'] = np.full((len(results)), -1).tolist()
+        results[f'vit_{data_type}_train_accuracy'] = np.full((len(results)), -1).tolist()
+        results[f'vit_{data_type}_val_accuracy'] = np.full((len(results)), -1).tolist()
+        results[f'vit_{data_type}_test_accuracy'] = np.full((len(results)), -1).tolist()
         results.to_csv(RESULTS, index=False)
     model_parameters = pd.read_excel(open('datasets_and_model_parameters.xlsx', 'rb'), sheet_name='vit_parameters')
     # training model
@@ -83,7 +83,7 @@ def train_vit(datasets_parameters, data_type, results):
                 print(f'image_size = {image_size}, patch_size = {patch_size}, num_classes = {dataset["num_classes"]}, dim = {dim}, depth = {depth}, heads = {heads}, mlp_dim = {mlp_dim}, pool = {pool}, dim_head = {dim_head}, dropout = {dropout}, emb_dropout = {emb_dropout}')
                 # model_file_path = os.path.join(TRAINED_MODELS, 'vit_' + dataset['name'])
                 model = None
-                if results.iloc[i]['vit_train_accuracy'] == -1:
+                if results.iloc[i][f'vit_{data_type}_train_accuracy'] == -1:
                     model = ViT(
                         image_size = image_size,
                         patch_size = patch_size,
@@ -128,11 +128,11 @@ def train_vit(datasets_parameters, data_type, results):
                         print(f"Epoch : {epoch+1} - loss : {epoch_loss:.4f} - acc: {epoch_accuracy:.4f} - val_loss : {epoch_val_loss:.4f} - val_acc: {epoch_val_accuracy:.4f}", end='\r')
                     train_accuracy = test_model(model, train_loader, device)
                     test_accuracy = test_model(model, test_loader, device)
-                    results.loc[i,'vit_train_accuracy'] = train_accuracy
-                    results.loc[i,'vit_test_accuracy'] = test_accuracy
+                    results.loc[i,f'vit_{data_type}_train_accuracy'] = train_accuracy
+                    results.loc[i,f'vit_{data_type}_test_accuracy'] = test_accuracy
                     if has_val_dataset:
                         val_accuracy = test_model(model, val_loader, device)
-                        results.loc[i,'vit_val_accuracy'] = val_accuracy
+                        results.loc[i,f'vit_{data_type}_val_accuracy'] = val_accuracy
                         print(f'train_accuracy = {train_accuracy}, test_accuracy = {test_accuracy}, val_accuracy = {val_accuracy}')
                     else:
                         print(f'train_accuracy = {train_accuracy}, test_accuracy = {test_accuracy}')
