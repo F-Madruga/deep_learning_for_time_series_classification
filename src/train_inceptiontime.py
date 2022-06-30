@@ -20,11 +20,11 @@ def train_inceptiontime(datasets_parameters, data_type, results):
         val_transform = transforms.Compose([lambda x: plotting_time_normalization(x), transforms.ToTensor(), lambda x: torch.reshape(x, (x.shape[0], x.shape[1] * x.shape[2]))])
         test_transform = transforms.Compose([lambda x: plotting_time_normalization(x), transforms.ToTensor(), lambda x: torch.reshape(x, (x.shape[0], x.shape[1] * x.shape[2]))])
     # add column for model results
-    if 'inceptiontime_train_accuracy' not in results.columns or TRAIN_NEW_MODELS:
+    if f'inceptiontime_{data_type}_train_accuracy' not in results.columns or TRAIN_NEW_MODELS:
         print('Never trained this model')
-        results['inceptiontime_train_accuracy'] = np.full((len(results)), -1).tolist()
-        results['inceptiontime_val_accuracy'] = np.full((len(results)), -1).tolist()
-        results['inceptiontime_test_accuracy'] = np.full((len(results)), -1).tolist()
+        results[f'inceptiontime_{data_type}_train_accuracy'] = np.full((len(results)), -1).tolist()
+        results[f'inceptiontime_{data_type}_val_accuracy'] = np.full((len(results)), -1).tolist()
+        results[f'inceptiontime_{data_type}_test_accuracy'] = np.full((len(results)), -1).tolist()
         results.to_csv(RESULTS, index=False)
     model_parameters = pd.read_excel(open('datasets_and_model_parameters.xlsx', 'rb'), sheet_name='inceptiontime_parameters')
     # training model
@@ -56,7 +56,7 @@ def train_inceptiontime(datasets_parameters, data_type, results):
                 train_loader, test_loader = get_dataloaders(batch_size, train_dataset, test_dataset)
             model = None
             trainer = Trainer(gpus=GPUS, max_epochs=num_epochs, fast_dev_run=FAST_DEV_RUN)
-            if results.iloc[i]['inceptiontime_train_accuracy'] == -1:
+            if results.iloc[i][f'inceptiontime_{data_type}_train_accuracy'] == -1:
                 model = InceptionTime(1, int(dataset['num_classes']), learning_rate, n_filters=[32, 32, 32, 32, 32], use_residual=use_residual)
                 if has_val_dataset:
                     trainer.fit(model, train_loader, val_loader)
@@ -64,11 +64,11 @@ def train_inceptiontime(datasets_parameters, data_type, results):
                     trainer.fit(model, train_loader)
                 train_accuracy = trainer.test(model, train_loader)[0]['test_accuracy']
                 test_accuracy = trainer.test(model, train_loader)[0]['test_accuracy']
-                results.loc[i,'inceptiontime_train_accuracy'] = train_accuracy
-                results.loc[i,'inceptiontime_test_accuracy'] = test_accuracy
+                results.loc[i,f'inceptiontime_{data_type}_train_accuracy'] = train_accuracy
+                results.loc[i,f'inceptiontime_{data_type}_test_accuracy'] = test_accuracy
                 if has_val_dataset:
                     val_accuracy = trainer.test(model, val_loader)[0]['test_accuracy']
-                    results.loc[i,'inceptiontime_val_accuracy'] = val_accuracy
+                    results.loc[i,f'inceptiontime_{data_type}_val_accuracy'] = val_accuracy
                     print(f'train_accuracy = {train_accuracy}, test_accuracy = {test_accuracy}, val_accuracy = {val_accuracy}')
                 else:
                     print(f'train_accuracy = {train_accuracy}, test_accuracy = {test_accuracy}')

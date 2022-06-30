@@ -18,6 +18,7 @@ __pycache__/
 /data_prep
 /brian
 /Tese
+run_di.sh
 
 
 # Distribution / packaging
