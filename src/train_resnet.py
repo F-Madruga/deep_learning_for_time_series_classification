@@ -53,14 +53,13 @@ def train_resnet50(datasets_parameters, data_type, results):
             model = None
             trainer = Trainer(callbacks=[early_stop_callback], gpus=GPUS, max_epochs=num_epochs, fast_dev_run=FAST_DEV_RUN)
             if results.iloc[i][f'resnet50_{data_type}_train_accuracy'] == -1:
-                print(dataset['num_classes'])
                 model = ResNet.ResNet50(img_channels=1, num_classes=int(dataset['num_classes']), learning_rate=learning_rate)
                 if has_val_dataset:
                     trainer.fit(model, train_loader, val_loader)
                 else:
                     trainer.fit(model, train_loader)
                 train_accuracy = trainer.test(model, train_loader)[0]['test_accuracy']
-                test_accuracy = trainer.test(model, train_loader)[0]['test_accuracy']
+                test_accuracy = trainer.test(model, test_loader)[0]['test_accuracy']
                 results.loc[i,f'resnet50_{data_type}_train_accuracy'] = train_accuracy
                 results.loc[i,f'resnet50_{data_type}_test_accuracy'] = test_accuracy
                 if has_val_dataset:

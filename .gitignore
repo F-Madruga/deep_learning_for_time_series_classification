@@ -15,6 +15,7 @@ __pycache__/
 
 /src/data_organizer.py
 /datasets
+/lightning_logs
 /data_prep
 /brian
 /Tese

@@ -63,7 +63,7 @@ def train_inceptiontime(datasets_parameters, data_type, results):
                 else:
                     trainer.fit(model, train_loader)
                 train_accuracy = trainer.test(model, train_loader)[0]['test_accuracy']
-                test_accuracy = trainer.test(model, train_loader)[0]['test_accuracy']
+                test_accuracy = trainer.test(model, test_loader)[0]['test_accuracy']
                 results.loc[i,f'inceptiontime_{data_type}_train_accuracy'] = train_accuracy
                 results.loc[i,f'inceptiontime_{data_type}_test_accuracy'] = test_accuracy
                 if has_val_dataset:

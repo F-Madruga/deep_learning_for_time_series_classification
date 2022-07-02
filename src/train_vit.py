@@ -1,29 +1,11 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
 import os
 import pandas as pd
 import numpy as np
+from vit import Visual_Transformer
 from torchvision import transforms
-from vit_pytorch import ViT
-from torch.optim.lr_scheduler import StepLR
+from pytorch_lightning import Trainer
 from utils import black_and_white_image_to_binary, plotting_time_normalization, load_image_datasets, get_dataloaders
-from constants import TRAIN_NEW_MODELS, RESULTS, DATASETS_WITH_BAD_IMAGE_RESOLUTIONS, DATASETS_PATH
-
-
-def test_model(model, data_loader, device):
-    with torch.no_grad():
-        n_correct = 0
-        n_samples = 0
-        for data, label in data_loader:
-            data = data.to(device)
-            label = label.to(device)
-            outputs = model(data)
-            _, predicted = torch.max(outputs, 1)
-            n_samples += label.size(0)
-            n_correct += (predicted == label).sum().item()
-        train_accuracy = n_correct / n_samples
-        return train_accuracy
+from constants import FAST_DEV_RUN, GPUS, TRAIN_NEW_MODELS, RESULTS, DATASETS_WITH_BAD_IMAGE_RESOLUTIONS, DATASETS_PATH
 
 def train_vit(datasets_parameters, data_type, results):
     # transformers
@@ -44,7 +26,6 @@ def train_vit(datasets_parameters, data_type, results):
     model_parameters = pd.read_excel(open('datasets_and_model_parameters.xlsx', 'rb'), sheet_name='vit_parameters')
     # training model
     for i, dataset in datasets_parameters.iterrows():
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # model parameters
         num_epochs = int(model_parameters.iloc[i]['epochs'])
         batch_size = int(model_parameters.iloc[i]['batch_size'])
@@ -81,57 +62,34 @@ def train_vit(datasets_parameters, data_type, results):
                     if image_size % patch_size == 0:
                         break
                 print(f'image_size = {image_size}, patch_size = {patch_size}, num_classes = {dataset["num_classes"]}, dim = {dim}, depth = {depth}, heads = {heads}, mlp_dim = {mlp_dim}, pool = {pool}, dim_head = {dim_head}, dropout = {dropout}, emb_dropout = {emb_dropout}')
-                # model_file_path = os.path.join(TRAINED_MODELS, 'vit_' + dataset['name'])
                 model = None
+                trainer = Trainer(gpus=GPUS, max_epochs=num_epochs, fast_dev_run=FAST_DEV_RUN)
                 if results.iloc[i][f'vit_{data_type}_train_accuracy'] == -1:
-                    model = ViT(
-                        image_size = image_size,
-                        patch_size = patch_size,
-                        num_classes = int(dataset['num_classes']),
-                        dim = dim,
-                        depth = depth,
-                        heads = heads,
-                        mlp_dim = mlp_dim,
-                        pool = pool,
-                        channels = 1,
-                        dim_head = dim_head,
-                        dropout = dropout,
-                        emb_dropout = emb_dropout).to(device)
-                    criterion = nn.CrossEntropyLoss()
-                    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-                    scheduler = StepLR(optimizer, step_size=1, gamma=gamma)
-                    for epoch in range(2):
-                        epoch_loss = 0
-                        epoch_accuracy = 0
-                        for data, label in train_loader:
-                            data = data.to(device)
-                            label = label.to(device)
-                            output = model(data)
-                            loss = criterion(output, label)
-                            optimizer.zero_grad()
-                            loss.backward()
-                            optimizer.step()
-                            acc = (output.argmax(dim=1) == label).float().mean()
-                            epoch_accuracy += acc / len(train_loader)
-                            epoch_loss += loss / len(train_loader)
-                        with torch.no_grad():
-                            epoch_val_accuracy = 0
-                            epoch_val_loss = 0
-                            for data, label in val_loader:
-                                data = data.to(device)
-                                label = label.to(device)
-                                val_output = model(data)
-                                val_loss = criterion(val_output, label)
-                                acc = (val_output.argmax(dim=1) == label).float().mean()
-                                epoch_val_accuracy += acc / len(val_loader)
-                                epoch_val_loss += val_loss / len(val_loader)
-                        print(f"Epoch : {epoch+1} - loss : {epoch_loss:.4f} - acc: {epoch_accuracy:.4f} - val_loss : {epoch_val_loss:.4f} - val_acc: {epoch_val_accuracy:.4f}", end='\r')
-                    train_accuracy = test_model(model, train_loader, device)
-                    test_accuracy = test_model(model, test_loader, device)
+                    model = Visual_Transformer(
+                        image_size,
+                        patch_size,
+                        int(dataset['num_classes']),
+                        dim,
+                        depth,
+                        heads,
+                        mlp_dim,
+                        pool,
+                        1,
+                        dim_head,
+                        dropout,
+                        emb_dropout,
+                        learning_rate
+                    )
+                    if has_val_dataset:
+                        trainer.fit(model, train_loader, val_loader)
+                    else:
+                        trainer.fit(model, train_loader)
+                    train_accuracy = trainer.test(model, train_loader)[0]['test_accuracy']
+                    test_accuracy = trainer.test(model, test_loader)[0]['test_accuracy']
                     results.loc[i,f'vit_{data_type}_train_accuracy'] = train_accuracy
                     results.loc[i,f'vit_{data_type}_test_accuracy'] = test_accuracy
                     if has_val_dataset:
-                        val_accuracy = test_model(model, val_loader, device)
+                        val_accuracy = trainer.test(model, val_loader)[0]['test_accuracy']
                         results.loc[i,f'vit_{data_type}_val_accuracy'] = val_accuracy
                         print(f'train_accuracy = {train_accuracy}, test_accuracy = {test_accuracy}, val_accuracy = {val_accuracy}')
                     else:
@@ -139,9 +97,7 @@ def train_vit(datasets_parameters, data_type, results):
                     results.to_csv(RESULTS, index=False)
                 else:
                     print('Model already trained')
-            else:
-                print('Wrong shape')
         else:
-            print('Bad image resolution')
+            print('Bad image dimension')
     results.to_csv(RESULTS, index=False)
     return results
