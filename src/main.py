@@ -14,12 +14,11 @@ def main():
         results = pd.read_csv(RESULTS)
     for data_type in DATASET_TYPES:
         split_train_dataset_to_val(datasets_parameters, data_type)
-        # results = train_resnet50(datasets_parameters, data_type, results)
-        # results = train_resnet101(datasets_parameters, data_type, results)
-        # results = train_resnet152(datasets_parameters, data_type, results)
-        # results = train_vit(datasets_parameters, data_type, results)
+        results = train_resnet50(datasets_parameters, data_type, results)
+        results = train_resnet101(datasets_parameters, data_type, results)
+        results = train_resnet152(datasets_parameters, data_type, results)
         results = train_vit(datasets_parameters, data_type, results)
-        # results = train_inceptiontime(datasets_parameters, data_type, results)
+        results = train_inceptiontime(datasets_parameters, data_type, results)
 
 if __name__ == '__main__':
     main()
