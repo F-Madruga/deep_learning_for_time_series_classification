@@ -7,4 +7,3 @@ mv visual_transformer/src/* src
 rm -rf InceptionTime/
 rm -rf ResNet/
 rm -rf visual_transformer/
-python3 src/main.py
